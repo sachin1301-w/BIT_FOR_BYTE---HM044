@@ -249,6 +249,70 @@
             color: white;
         }
 
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                padding: 1rem;
+                gap: 1rem;
+            }
+            
+            .navbar-menu {
+                flex-direction: column;
+                width: 100%;
+                gap: 0.5rem;
+            }
+            
+            .navbar-menu a, .theme-toggle {
+                width: 100%;
+                text-align: center;
+                padding: 0.8rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .card {
+                padding: 1.5rem;
+                margin: 0.5rem;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr !important;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+            
+            .user-info {
+                flex-direction: column;
+                gap: 0.5rem;
+                width: 100%;
+                text-align: center;
+            }
+            
+            .points-badge {
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+            
+            .card h2 {
+                font-size: 1.5rem;
+            }
+            
+            input, select, textarea {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+        }
+
         {% block extra_styles %}{% endblock %}
     </style>
 </head>

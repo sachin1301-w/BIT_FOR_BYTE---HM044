@@ -11,13 +11,14 @@ try:
     from google import genai
     from google.genai import types
     HAS_GEMINI = True
-    # Get API key from environment
-    api_key = os.getenv('GEMINI_API_KEY')
+    # Get API key - try environment first, then hardcoded
+    api_key = os.getenv('GEMINI_API_KEY', 'AIzaSyBFrUsblzXjev2HqE0ncx3WQMNmqIXDh4Y')
     if api_key:
         client = genai.Client(api_key=api_key)
+        print("✅ Gemini AI activated successfully!")
 except Exception as e:
     HAS_GEMINI = False
-    print(f"Gemini AI not configured: {e}")
+    print(f"⚠️ Gemini AI not configured: {e}")
 
 # Rule-based responses for demo without API key
 DEMO_RESPONSES = {
@@ -43,28 +44,42 @@ def get_chatbot_response(user_message, user_context=None):
     # Try Gemini AI first
     if HAS_GEMINI and api_key:
         try:
-            # Create context for the AI
-            system_prompt = """You are a helpful loan advisor assistant for a loan prediction system. 
-            Provide clear, concise advice about loan applications, credit scores, and financial planning. 
-            Keep responses under 100 words and be encouraging but realistic.
-            Focus on: CIBIL scores, loan eligibility, required documents, financial tips."""
+            # Enhanced context for the AI
+            system_prompt = """You are an expert loan advisor AI for a loan prediction system in India.
+            
+            Your expertise:
+            - CIBIL score improvement (target: 750+)
+            - Loan eligibility assessment
+            - Financial documentation guidance
+            - Income-to-loan ratio optimization
+            - Asset valuation strategies
+            
+            Guidelines:
+            - Keep responses under 80 words
+            - Use emojis sparingly (💡 🎯 ✅ 📊)
+            - Be encouraging yet realistic
+            - Provide actionable advice
+            - Use bullet points for clarity
+            - Focus on Indian financial context"""
             
             context = ""
             if user_context:
-                context += f"User: {user_context.get('username', 'User')}\n"
+                context += f"\n📋 User Profile: {user_context.get('username', 'Applicant')}\n"
                 if user_context.get('last_prediction'):
-                    context += f"Last Prediction: {user_context['last_prediction']}\n"
+                    pred = user_context['last_prediction']
+                    context += f"Recent Application: {pred.get('status', 'Unknown')}\n"
+                    context += f"CIBIL: {pred.get('cibil_score', 'N/A')} | Income: ₹{pred.get('income_annum', 'N/A')}L\n"
             
-            # Use new Gemini API
+            # Use new Gemini API with better configuration
             response = client.models.generate_content(
                 model='gemini-2.0-flash-exp',
-                contents=f"{system_prompt}\n\n{context}\nUser Question: {user_message}"
+                contents=f"{system_prompt}\n\n{context}\n\n🗣️ User Question: {user_message}\n\n💬 Your Response:"
             )
             
             if response and response.text:
                 return response.text.strip()
         except Exception as e:
-            print(f"Gemini AI error: {e}")
+            print(f"⚠️ Gemini AI error: {e}")
             # Fall through to rule-based
     
     # Rule-based fallback

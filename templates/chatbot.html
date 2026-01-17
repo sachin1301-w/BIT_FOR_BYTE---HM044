@@ -16,7 +16,13 @@
     
     <div style="display: flex; gap: 1rem;">
         <input type="text" id="userMessage" placeholder="Type your question here..." style="flex: 1; padding: 1rem; border-radius: 10px; border: 2px solid var(--input-border);" onkeypress="if(event.key==='Enter') sendMessage()">
+        <button onclick="startVoiceInput()" class="btn" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); padding: 1rem;" title="Voice Input">🎤</button>
         <button onclick="sendMessage()" class="btn btn-primary">Send</button>
+    </div>
+    
+    <div style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+        <small id="typingIndicator" style="color: var(--text-secondary); font-style: italic; display: none;">🤖 AI is thinking...</small>
+        <button onclick="exportChat()" class="btn" style="background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); font-size: 0.9rem; padding: 0.5rem 1rem;">📥 Export Chat</button>
     </div>
     
     <div style="margin-top: 1rem;">
@@ -86,6 +92,8 @@
 </style>
 
 <script>
+    let chatHistory = [];
+    
     function addMessage(text, isUser) {
         const container = document.getElementById('chatContainer');
         const messageDiv = document.createElement('div');
@@ -93,6 +101,13 @@
         messageDiv.innerHTML = `<strong>${isUser ? '👤 You:' : '🤖 AI Assistant:'}</strong><p>${text}</p>`;
         container.appendChild(messageDiv);
         container.scrollTop = container.scrollHeight;
+        
+        // Store in history
+        chatHistory.push({
+            sender: isUser ? 'User' : 'AI Assistant',
+            message: text,
+            timestamp: new Date().toLocaleString()
+        });
     }
     
     async function sendMessage() {
@@ -104,6 +119,10 @@
         addMessage(message, true);
         input.value = '';
         
+        // Show typing indicator
+        const typingIndicator = document.getElementById('typingIndicator');
+        typingIndicator.style.display = 'block';
+        
         try {
             const response = await fetch('/chatbot', {
                 method: 'POST',
@@ -112,10 +131,66 @@
             });
             
             const data = await response.json();
+            typingIndicator.style.display = 'none';
             addMessage(data.response, false);
         } catch (error) {
+            typingIndicator.style.display = 'none';
             addMessage('Sorry, I encountered an error. Please try again.', false);
         }
+    }
+    
+    function startVoiceInput() {
+        if (!('webkitSpeechRecognition' in window)) {
+            alert('Voice input is not supported in your browser. Please use Chrome.');
+            return;
+        }
+        
+        const recognition = new webkitSpeechRecognition();
+        recognition.lang = 'en-IN';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        
+        recognition.onstart = function() {
+            document.getElementById('userMessage').placeholder = '🎤 Listening...';
+        };
+        
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            document.getElementById('userMessage').value = transcript;
+            document.getElementById('userMessage').placeholder = 'Type your question here...';
+        };
+        
+        recognition.onerror = function(event) {
+            alert('Voice input error: ' + event.error);
+            document.getElementById('userMessage').placeholder = 'Type your question here...';
+        };
+        
+        recognition.start();
+    }
+    
+    function exportChat() {
+        if (chatHistory.length === 0) {
+            alert('No chat history to export!');
+            return;
+        }
+        
+        let exportText = 'Loan Prediction AI Chat History\\n';
+        exportText += '================================\\n\\n';
+        
+        chatHistory.forEach((entry, index) => {
+            exportText += `[${entry.timestamp}]\\n`;
+            exportText += `${entry.sender}: ${entry.message}\\n\\n`;
+        });
+        
+        const blob = new Blob([exportText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `loan-chat-${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
     
     function askQuestion(question) {
