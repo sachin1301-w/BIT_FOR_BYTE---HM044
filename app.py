@@ -3,13 +3,18 @@ import pickle
 import numpy as np
 
 app = Flask(__name__)
-with open("loan_model.pkl(1)", "rb") as file:
-    rf = pickle.load(file)  
+with open("loan_model(2).pkl", "rb") as file:
+    data = pickle.load(file)
+
+rf = data["model"]
+scaler = data["scaler"]
+
 
 @app.route("/")
 def home():
     return render_template("index.html")
 
+@app.route("/predict", methods=["POST"])
 @app.route("/predict", methods=["POST"])
 def predict():
 
@@ -42,8 +47,10 @@ def predict():
         bank_asset_value
     ]])
 
-    prediction = rf.predict(input_data)[0]
-    probability = rf.predict_proba(input_data)[0][1] * 100
+    input_data_scaled = scaler.transform(input_data)
+
+    prediction = rf.predict(input_data_scaled)[0]
+    probability = rf.predict_proba(input_data_scaled)[0][1] * 100
 
     result = "Approved ✅" if prediction == 1 else "Rejected ❌"
 
@@ -52,6 +59,7 @@ def predict():
         prediction=result,
         probability=round(probability, 2)
     )
+
 
 if __name__ == "__main__":
     app.run(debug=True)
